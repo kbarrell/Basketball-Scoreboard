@@ -7,15 +7,23 @@
 #include 	<Arduino.h>
 #include	<ezBuzzer.h> 		// ezBuzzer library
 #include 	<Wire.h>
+#include	"CountDown.h"		//  countdown timer library
 
 
 #define LAUNCHCOUNT 0			// sound countdown to start of shot timer
 #define BASKET 	1				// sound when score detected
 #define TIMESUP 2				// sound end of shooting window
 #define  BounceInterval	15		// millsecs to allow for contact or detector bounce
+#define	ShotClock  30			// 30 sec shot window 
+#define	Precount	5			//    ...plus 5sec count-in
+#define	Fullcount  35			//	Clock start setting
+#define SCOREDISP  0			// 	Select the score display digits
+#define	CLOCKDISP  1			//  Select the timer display digits
 
 const int BUTTON_PIN = 2;
 const int BUZZER_PIN = 3;
+
+CountDown cdt;  //  default millis
 
 volatile unsigned int contactBounceTime;		// Supports debouncing of pushbutton time
 volatile int scoreCount = 0;							// current score total
@@ -32,7 +40,11 @@ int noteDurations[] = {
 	8, 1
 };
 
-int lastButtonState = HIGH; // the previous state from the input pin
+int lastButtonState = HIGH; 	// the previous state from the input pin
+bool shooting = false;			// is shooting in progress?
+int	 remSecs	=	Fullcount;	// time remaining with seconds resolution
+int	preCount = 0;				// register for count during pre-shooting count
+int	 currentBtnState;			// tracks state of trigger button
 int soundType = 0;
 int	loopcount = 0;
 unsigned long buzzerStartTime = 0;
@@ -48,7 +60,7 @@ void isr_scoreIt(){
     }
 }
 
-void soundIt( int eventType) {
+void soundIt(int eventType) {
 
 	int length = sizeof(noteDurations) / sizeof(int);
 
@@ -67,30 +79,51 @@ void soundIt( int eventType) {
 	}
 }
 
+void displayIt(int dispType, int numToDisp) {
+
+}
+
 void setup() {
 	Serial.begin(115200);
     pinMode (LED_BUILTIN,OUTPUT);
   	pinMode(BUTTON_PIN, INPUT_PULLUP);
 	soundType = 0;
+	scoreCount = 0;
 	contactBounceTime = millis();
+	cdt.stop();
+	shooting = false;
 }
 
 void loop() {
 	
 	buzzer.loop(); // MUST call the buzzer.loop() function in loop()
 
-//	Monitor button for launch
-
-   	int currentState = digitalRead(BUTTON_PIN);
-	if (lastButtonState == HIGH && currentState == LOW) {
-
-		runCountdown();
-//   		 Serial.print("The button is pressed \t for soundType =");
-//		 Serial.println(soundType);
-//		 soundIt(soundType);
-//		 soundType++;
+	if (shooting) {							// Push button etc. is diabled while on shot clock
+		if (cdt.isStopped()) {				// timer has expired
+			shooting = false;
+			soundIt(TIMESUP);	
+		}			
+	} else {								// Push button enabled
+   		currentBtnState = digitalRead(BUTTON_PIN);
+		if (lastButtonState == HIGH && currentBtnState == LOW) {
+			cdt.start(0,0,0,Fullcount);		//  start countdown clock in secs	
+			remSecs	=	Fullcount;
+			preCount = remSecs;
+		} 
+		lastButtonState = currentBtnState;
+		if (cdt.isRunning() ) {						// clock has started
+			remSecs = cdt.remaining();
+			if (remSecs <= ShotClock) {
+				shooting = true;
+			}
+			else if (preCount > remSecs){
+				soundIt(LAUNCHCOUNT);				// in pre-count phase
+				preCount = remSecs;
+			} 
+		}	
 	}
-	lastButtonState = currentState;
+	displayIt(SCOREDISP, scoreCount);
+	displayIt(CLOCKDISP, remSecs);
 }
 
 
