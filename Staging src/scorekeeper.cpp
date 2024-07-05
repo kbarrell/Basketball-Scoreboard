@@ -193,8 +193,7 @@ void setup ()
 {
   Serial.begin(9600);
 
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+
   
   //set timer1 interrupt at 1Hz
   cli();
