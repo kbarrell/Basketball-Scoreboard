@@ -9,6 +9,7 @@
 #include	"ezBuzzer.h" 		// ezBuzzer library
 #include	"CountDown.h"		//  countdown timer library
 #include 	"VL6180X_WE.h"		//  distance ToF sensor
+#include	"Mux.h"				//  Multiplexor 
 
 
 #define LAUNCHCOUNT 0			// sound countdown to start of shot timer
@@ -163,6 +164,7 @@ void loop() {
 			remSecs = cdt.remaining();
 			if (remSecs <= ShotClock) {
 				shooting = true;
+				sensor.VL6180xClearInterrupt();
 				interrupts();
 			}
 			else if (preCount > remSecs){
