@@ -1,8 +1,9 @@
 /*
-	EasyBuzzer - Beep Sequence
-	This example shows you how to create a sequence of beeps, at a given frequency.
-	Copyright (c) 2017, Evert Arias
-	MIT License
+	Scoreboard  --  Basketball shot clock and score counter
+
+	Counts successful hoops shot during a controlled countdown period 
+	and displays on large 60mm 7-segment LED array
+
 */
 #include 	<Arduino.h>
 #include 	<Wire.h>
