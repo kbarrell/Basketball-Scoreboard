@@ -11,6 +11,9 @@
 #include	"CountDown.h"		//  countdown timer library
 #include 	"VL6180X_WE.h"		//  distance ToF sensor
 #include	"Mux.h"				//  Multiplexor 
+#include 	"LedControl_HW_SPI.h"
+#include	"LedControl.h"		//  Digit-segment driver
+
 
 
 #define LAUNCHCOUNT 0			// sound countdown to start of shot timer
@@ -27,12 +30,24 @@
 const int BUTTON_PIN = 2;
 const int BUZZER_PIN = 5;
 const int trigPin = 3;			//distance sensor pin
+const int driverAddr = 0;		// address of MAX7219 display driver
 
 VL6180xIdentification identification;
 VL6180x sensor(VL6180X_ADDRESS);
 ezBuzzer buzzer(BUZZER_PIN); // create ezBuzzer object that attaches to a pin;
 CountDown cdt;  			//  default millis
 
+/*
+ Now we need a LedControl to work with.
+ ***** These pin numbers will probably not work with your hardware *****
+ pin 12 is connected to the DataIn 
+ pin 11 is connected to the CLK 
+ pin 10 is connected to LOAD 
+ We have only a single MAX72XX.
+ */
+LedControl_HW_SPI lc = LedControl_HW_SPI();
+
+unsigned long dispDelay=250;	/* we always wait a bit between updates of the display */
 volatile unsigned int contactBounceTime;		// Supports debouncing of pushbutton time
 volatile int scoreCount = 0;							// current score total
 volatile bool event = false;			// distance sensor triggered  event
@@ -66,7 +81,7 @@ void isr_scoreIt(){
     sensor.VL6180xClearInterrupt();
 }
 
-
+//	Routine to sound out alerts for each event occurrence
 void soundIt(int eventType) {
 
 	int length = sizeof(noteDurations) / sizeof(int);
@@ -86,7 +101,29 @@ void soundIt(int eventType) {
 	}
 }
 
+//	Routine to display 2 digits for either Score count or Countdown timer
 void displayIt(int dispType, int numToDisp) {
+
+	const bool decPt = false;	// never light up the decimal point
+	static byte	tens[2], units[2];		// hold the digit values for display (score & counter)
+	byte newUnits, newTens;		// from incoming numToDisp
+	int	remToDisp;				// stipped of units value
+	int digOffset;				// digits for countdown clock are displayed on score address + 2
+
+	newUnits = numToDisp % 10;		// extract units value
+	remToDisp = numToDisp / 10;
+	newTens =  remToDisp % 10 ;		// extract tens value
+	digOffset = 2 * dispType;		//  0 address offset for Score display, 2 for Countdown display
+
+	if (units[dispType] != newUnits) {				// units is displayed on digits 0 & 2
+		units[dispType] = newUnits;					// update units digit register
+		lc.setDigit(driverAddr,0+digOffset,units[dispType],decPt);	// display new units value
+	}
+
+	if (tens[dispType] != newTens) {
+		tens[dispType] = newTens;							//  tens displayed on digits 1 & 3
+		lc.setDigit(driverAddr,1+digOffset,tens[dispType],decPt);	// and again for tens digit
+	}
 
 }
 
@@ -103,7 +140,6 @@ void setup() {
 
 	pinMode(trigPin, INPUT_PULLUP);
   	attachInterrupt(digitalPinToInterrupt(trigPin), isr_scoreIt, FALLING);
-	noInterrupts();
   	Wire.begin(); //Start I2C library
 
   	if(sensor.VL6180xInit() != 0){
@@ -112,16 +148,6 @@ void setup() {
 
   	sensor.VL6180xDefaultSettings(); //Load default settings to get started.
   	delay(100); // delay 0.1s
-
-  //Input GAIN for light levels, 
-  // GAIN_20     // Actual ALS Gain of 20
-  // GAIN_10     // Actual ALS Gain of 10.32
-  // GAIN_5      // Actual ALS Gain of 5.21
-  // GAIN_2_5    // Actual ALS Gain of 2.60
-  // GAIN_1_67   // Actual ALS Gain of 1.72
-  // GAIN_1_25   // Actual ALS Gain of 1.28
-  // GAIN_1      // Actual ALS Gain of 1.01
-  // GAIN_40     // ActualALS Gain of 40
 
   /* Range Threshold Interrupt:
    * The interrupt is set up with VL6180xSetDistInt(low limit / high limit);
@@ -133,12 +159,19 @@ void setup() {
    * low limit = 50, high limit = 255 => interrupt is triggered at < 50
    * low limit = 0, high limit = 50 => interrupts is triggered at > 50
    */
-	sensor.VL6180xSetDistInt(50,255); 
+	sensor.VL6180xSetDistInt(100,255); 
 	sensor.getDistanceContinously();
-  
-  // ALS Threshold Interrupt:
-  // sensor.VL6180xSetALSInt(GAIN_1,30,200);
-  // sensor.getAmbientLightContinously(GAIN_1); 
+ 
+	/*
+   	The MAX72XX is in power-saving mode on startup,
+   	we have to do a wakeup call
+   	*/
+  	lc.shutdown(0,false);
+  	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
+  	lc.setIntensity(0,8);	// Set the brightness to a medium values 
+  	lc.clearDisplay(0);		// and clear the display
+
+  	noInterrupts();
 }
 
 void loop() {
