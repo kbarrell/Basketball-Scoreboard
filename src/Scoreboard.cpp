@@ -31,6 +31,7 @@ const int BUTTON_PIN = 2;
 const int BUZZER_PIN = 5;
 const int trigPin = 3;			//distance sensor pin
 const int driverAddr = 0;		// address of MAX7219 display driver
+const int dispPin = 10;			// pin to select MAX7219 display controller
 
 VL6180xIdentification identification;
 VL6180x sensor(VL6180X_ADDRESS);
@@ -102,6 +103,8 @@ void soundIt(int eventType) {
 }
 
 //	Routine to display 2 digits for either Score count or Countdown timer
+//       dispType = SCOREDISP (=0) or CLOCKDISP (=1)
+//
 void displayIt(int dispType, int numToDisp) {
 
 	const bool decPt = false;	// never light up the decimal point
@@ -166,7 +169,8 @@ void setup() {
    	The MAX72XX is in power-saving mode on startup,
    	we have to do a wakeup call
    	*/
-  	lc.shutdown(0,false);
+    lc.begin(dispPin,1,10000000);
+	lc.shutdown(0,false);
   	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
   	lc.setIntensity(0,8);	// Set the brightness to a medium values 
   	lc.clearDisplay(0);		// and clear the display
