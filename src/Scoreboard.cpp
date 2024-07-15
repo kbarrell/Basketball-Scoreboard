@@ -10,7 +10,6 @@
 #include	"ezBuzzer.h" 		// ezBuzzer library
 #include	"CountDown.h"		//  countdown timer library
 #include 	"VL6180X_WE.h"		//  distance ToF sensor
-#include	"Mux.h"				//  Multiplexor 
 #include 	"LedControl_HW_SPI.h"
 #include	"LedControl.h"		//  Digit-segment driver
 
