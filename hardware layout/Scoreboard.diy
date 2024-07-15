@@ -3146,11 +3146,11 @@
     <diylc.misc.WrapLabel>
       <name>L3</name>
       <controlPoints>
-        <point x="1.6" y="2.2"/>
-        <point x="2.0" y="2.4"/>
+        <point x="1.6" y="2.3000000000000003"/>
+        <point x="2.0" y="2.5"/>
       </controlPoints>
-      <firstPoint x="1.6" y="2.2"/>
-      <secondPoint x="2.0" y="2.4"/>
+      <firstPoint x="1.6" y="2.3000000000000003"/>
+      <secondPoint x="2.0" y="2.5"/>
       <font reference="../../diylc.misc.Label/font"/>
       <color hex="000000"/>
       <horizontalAlignment>LEFT</horizontalAlignment>
@@ -4549,13 +4549,69 @@
       <pinSpacing value="0.1" unit="in"/>
       <voltage>_63V</voltage>
     </diylc.passive.RadialCeramicDiskCapacitor>
+    <diylc.connectivity.Line>
+      <name>LN4</name>
+      <alpha>127</alpha>
+      <points>
+        <point x="1.7" y="2.3"/>
+        <point x="1.8" y="2.1"/>
+        <point x="0.0" y="0.0"/>
+      </points>
+      <bodyColor hex="ffffff"/>
+      <borderColor hex="000000"/>
+      <labelColor hex="000000"/>
+      <leadColor hex="cccccc"/>
+      <display>NAME</display>
+      <flipStanding>false</flipStanding>
+      <labelOriantation>Directional</labelOriantation>
+      <moveLabel>false</moveLabel>
+      <hideShortLeads>false</hideShortLeads>
+      <color hex="000000"/>
+      <style>SOLID</style>
+      <thickness value="1.0" unit="px"/>
+      <arrowSize value="5.0" unit="px"/>
+      <arrowTx serialization="custom">
+        <java.awt.geom.AffineTransform>
+          <default>
+            <m00>1.0</m00>
+            <m01>0.0</m01>
+            <m02>0.0</m02>
+            <m10>0.0</m10>
+            <m11>1.0</m11>
+            <m12>0.0</m12>
+          </default>
+        </java.awt.geom.AffineTransform>
+      </arrowTx>
+      <arrowStart>false</arrowStart>
+      <arrowEnd>false</arrowEnd>
+    </diylc.connectivity.Line>
+    <diylc.misc.Label>
+      <name>LAB41</name>
+      <point x="1.6" y="3.4"/>
+      <text>DC-DC Buck boost converter</text>
+      <font name="Dialog" size="14" style="0"/>
+      <color hex="000000"/>
+      <horizontalAlignment>CENTER</horizontalAlignment>
+      <verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </diylc.misc.Label>
+    <diylc.misc.Label>
+      <name>LAB42</name>
+      <point x="4.5" y="2.3"/>
+      <text>8-wire segment bus</text>
+      <font reference="../../diylc.misc.Label[41]/font"/>
+      <color hex="000000"/>
+      <horizontalAlignment>CENTER</horizontalAlignment>
+      <verticalAlignment>CENTER</verticalAlignment>
+      <orientation>DEFAULT</orientation>
+    </diylc.misc.Label>
   </components>
   <groups>
     <set>
-      <diylc.semiconductors.TransistorTO220 reference="../../../components/diylc.semiconductors.TransistorTO220[2]"/>
       <diylc.semiconductors.TransistorTO220 reference="../../../components/diylc.semiconductors.TransistorTO220[3]"/>
-      <diylc.semiconductors.TransistorTO220 reference="../../../components/diylc.semiconductors.TransistorTO220[4]"/>
       <diylc.semiconductors.TransistorTO220 reference="../../../components/diylc.semiconductors.TransistorTO220"/>
+      <diylc.semiconductors.TransistorTO220 reference="../../../components/diylc.semiconductors.TransistorTO220[4]"/>
+      <diylc.semiconductors.TransistorTO220 reference="../../../components/diylc.semiconductors.TransistorTO220[2]"/>
     </set>
   </groups>
   <lockedLayers/>
