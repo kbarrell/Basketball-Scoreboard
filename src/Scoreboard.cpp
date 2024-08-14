@@ -144,12 +144,20 @@ void setup() {
   	attachInterrupt(digitalPinToInterrupt(trigPin), isr_scoreIt, FALLING);
   	Wire.begin(); //Start I2C library
 
+	Serial.println("Ready to Sstart");
+
   	if(sensor.VL6180xInit() != 0){
    		 Serial.println("FAILED TO INITALIZE"); //Initialize device and check for errors
     }
 
-  	sensor.VL6180xDefaultSettings(); //Load default settings to get started.
+	Serial.println(sensor.VL6180xInit());
+
+  	// sensor.VL6180xDefaultSettings(); //Load default settings to get started.
   	delay(100); // delay 0.1s
+
+	Serial.println("ToF sensor initialised");
+
+	delay(3000);
 
   /* Range Threshold Interrupt:
    * The interrupt is set up with VL6180xSetDistInt(low limit / high limit);
@@ -168,24 +176,32 @@ void setup() {
    	The MAX72XX is in power-saving mode on startup,
    	we have to do a wakeup call
    	*/
-    lc.begin(dispPin,1,10000000);
-	lc.shutdown(0,false);
-  	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
-  	lc.setIntensity(0,8);	// Set the brightness to a medium values 
-  	lc.clearDisplay(0);		// and clear the display
 
-  	noInterrupts();
+
+ //   lc.begin(dispPin,1,10000000);
+//	lc.shutdown(0,false);
+ // 	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
+ // 	lc.setIntensity(0,8);	// Set the brightness to a medium values 
+ // 	lc.clearDisplay(0);		// and clear the display
+
+//  	noInterrupts();
+   Serial.println("wakeup led control");
+	Serial.println("ready to loop");
+	Serial.println("...");
+
 }
 
 void loop() {
 	
 	buzzer.loop(); // MUST call the buzzer.loop() function in loop()
+	
 
 	if (shooting) {							// Push button etc. is diabled while on shot clock
-		if (cdt.isStopped()) {				// timer has expired
+		if (remSecs == 0) {					// timer has expired
 			shooting = false;
 			soundIt(TIMESUP);
-			noInterrupts();	
+			cdt.stop();
+//			noInterrupts();	
 		} 
 		remSecs = cdt.remaining();			
 	} else {								// Push button enabled
@@ -210,8 +226,11 @@ void loop() {
 			} 
 		}	
 	}
-	displayIt(SCOREDISP, scoreCount);
-	displayIt(CLOCKDISP, remSecs);
+
+	Serial.println(scoreCount);
+	Serial.println(remSecs);
+//	displayIt(SCOREDISP, scoreCount);
+//	displayIt(CLOCKDISP, remSecs);
 }
 
 
