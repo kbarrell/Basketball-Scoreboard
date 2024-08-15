@@ -49,7 +49,7 @@ LedControl_HW_SPI lc = LedControl_HW_SPI();
 
 unsigned long dispDelay=250;	/* we always wait a bit between updates of the display */
 volatile unsigned int contactBounceTime;		// Supports debouncing of pushbutton time
-volatile int scoreCount = 0;							// current score total
+
 volatile bool event = false;			// distance sensor triggered  event
 
 // notes in the melody:
@@ -65,20 +65,19 @@ int noteDurations[] = {
 
 int lastButtonState = HIGH; 	// the previous state from the input pin
 bool shooting = false;			// is shooting in progress?
-int	 remSecs	=	Fullcount;	// time remaining with seconds resolution
+int	 remSecs	=	0;			// time remaining with seconds resolution
 int	preCount = 0;				// register for count during pre-shooting count
 int	 currentBtnState;			// tracks state of trigger button
 int soundType = 0;
 int	loopcount = 0;
+int scoreCount = 0;							// current score total
 unsigned long buzzerStartTime = 0;
-int gain;						//  sensor gain
 
 
 //	ISR handler for ball detected through hoop
 //  only triggered if shooting == true
 void isr_scoreIt(){
-    scoreCount += 1;
-    sensor.VL6180xClearInterrupt();
+	event = true;
 }
 
 //	Routine to sound out alerts for each event occurrence
@@ -150,13 +149,12 @@ void setup() {
    		 Serial.println("FAILED TO INITALIZE"); //Initialize device and check for errors
     }
 
-	delay(3000);
   	sensor.VL6180xDefaultSettings(); //Load default settings to get started.
   	delay(100); // delay 0.1s
 
 	Serial.println("ToF sensor initialised");
 
-	delay(3000);
+	delay(1000);
 
   /* Range Threshold Interrupt:
    * The interrupt is set up with VL6180xSetDistInt(low limit / high limit);
@@ -177,11 +175,12 @@ void setup() {
    	*/
 
 
- //   lc.begin(dispPin,1,10000000);
-//	lc.shutdown(0,false);
- // 	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
- // 	lc.setIntensity(0,8);	// Set the brightness to a medium values 
- // 	lc.clearDisplay(0);		// and clear the display
+    lc.begin(dispPin,1,10000000);
+	lc.shutdown(0,false);
+  	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
+  	lc.setIntensity(0,8);	// Set the brightness to a medium values 
+ 
+  	lc.clearDisplay(0);		// and clear the display
 
 //  	noInterrupts();
    Serial.println("wakeup led control");
@@ -201,7 +200,13 @@ void loop() {
 			soundIt(TIMESUP);
 			cdt.stop();
 //			noInterrupts();	
-		} 
+		} else if (event) {					// hoop detected
+			scoreCount += 1;
+			soundIt(BASKET);
+			delay(500);					// allow time for ball to pass through without retriggering
+			event = false;
+			sensor.VL6180xClearInterrupt();
+		}
 		remSecs = cdt.remaining();			
 	} else {								// Push button enabled
    		currentBtnState = digitalRead(BUTTON_PIN);
@@ -217,7 +222,7 @@ void loop() {
 			if (remSecs <= ShotClock) {
 				shooting = true;
 				sensor.VL6180xClearInterrupt();
-				interrupts();
+//				interrupts();
 			}
 			else if (preCount > remSecs){
 				soundIt(LAUNCHCOUNT);				// in pre-count phase
@@ -226,10 +231,10 @@ void loop() {
 		}	
 	}
 
+	
+	Serial.print(remSecs);
+	Serial.print("\t");
 	Serial.println(scoreCount);
-	Serial.println(remSecs);
 //	displayIt(SCOREDISP, scoreCount);
 //	displayIt(CLOCKDISP, remSecs);
 }
-
-
