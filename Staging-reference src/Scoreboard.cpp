@@ -150,9 +150,8 @@ void setup() {
    		 Serial.println("FAILED TO INITALIZE"); //Initialize device and check for errors
     }
 
-	Serial.println(sensor.VL6180xInit());
-
-  	// sensor.VL6180xDefaultSettings(); //Load default settings to get started.
+	delay(3000);
+  	sensor.VL6180xDefaultSettings(); //Load default settings to get started.
   	delay(100); // delay 0.1s
 
 	Serial.println("ToF sensor initialised");

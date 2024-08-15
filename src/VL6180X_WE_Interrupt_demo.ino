@@ -8,6 +8,7 @@
  * 
  ******************************************************************************/
 
+#include 	<Arduino.h>
 #include <Wire.h>
 
 #include <VL6180X_WE.h>
@@ -15,7 +16,7 @@
 
 VL6180xIdentification identification;
 VL6180x sensor(VL6180X_ADDRESS);
-int interruptPin = 2;
+int interruptPin = 3;
 int ledPin = 13;
 volatile bool event = false;
 int gain;
@@ -28,12 +29,44 @@ void blink(){
   event = true;
 }
 
+void printIdentification(struct VL6180xIdentification *temp){
+  Serial.print("Model ID = ");
+  Serial.println(temp->idModel);
+
+  Serial.print("Model Rev = ");
+  Serial.print(temp->idModelRevMajor);
+  Serial.print(".");
+  Serial.println(temp->idModelRevMinor);
+
+  Serial.print("Module Rev = ");
+  Serial.print(temp->idModuleRevMajor);
+  Serial.print(".");
+  Serial.println(temp->idModuleRevMinor);  
+
+  Serial.print("Manufacture Date = ");
+  Serial.print((temp->idDate >> 3) & 0x001F);
+  Serial.print("/");
+  Serial.print((temp->idDate >> 8) & 0x000F);
+  Serial.print("/1");
+  Serial.print((temp->idDate >> 12) & 0x000F);
+  Serial.print(" Phase: ");
+  Serial.println(temp->idDate & 0x0007);
+
+  Serial.print("Manufacture Time (s)= ");
+  Serial.println(temp->idTime * 2);
+  Serial.println();
+  Serial.println();
+}
+
 void setup() {
   pinMode(ledPin, OUTPUT);
   pinMode(interruptPin, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(interruptPin), blink, FALLING);
-  Serial.begin(9600); 
+  Serial.begin(115200); 
   Wire.begin(); //Start I2C library
+
+    sensor.getIdentification(&identification); // Retrieve manufacture info from device memory
+  printIdentification(&identification); // Helper function to print all the Module information
 
   if(sensor.VL6180xInit() != 0){
     Serial.println("FAILED TO INITALIZE"); //Initialize device and check for errors
@@ -63,19 +96,21 @@ void setup() {
    * low limit = 50, high limit = 255 => interrupt is triggered at < 50
    * low limit = 0, high limit = 50 => interrupts is triggered at > 50
    */
-  sensor.VL6180xSetDistInt(50,150); 
+  sensor.VL6180xSetDistInt(100,255); 
   sensor.getDistanceContinously();
   
   // ALS Threshold Interrupt:
-  // sensor.VL6180xSetALSInt(GAIN_1,30,200);
-  // sensor.getAmbientLightContinously(GAIN_1); 
+ // sensor.VL6180xSetALSInt(GAIN_1,30,200);
+ // sensor.getAmbientLightContinously(GAIN_1); 
+
+  Serial.println("end of setup");
 }
 
 void loop() {
    if(event){
     Serial.println("Interrupt!"); 
-    // Serial.print("Last ALS Value: ");
-    // Serial.println(sensor.getLastAmbientLightFromHistory(GAIN_1));
+     Serial.print("Last ALS Value: ");
+     Serial.println(sensor.getLastAmbientLightFromHistory(GAIN_1));
     Serial.print("Last Distance Value: ");
     Serial.println(sensor.getLastDistanceFromHistory());
     digitalWrite(ledPin, HIGH);
