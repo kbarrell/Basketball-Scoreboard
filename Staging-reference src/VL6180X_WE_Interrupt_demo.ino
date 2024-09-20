@@ -60,7 +60,7 @@ void printIdentification(struct VL6180xIdentification *temp){
 
 void setup() {
   pinMode(ledPin, OUTPUT);
-  pinMode(interruptPin, INPUT_PULLUP);
+  pinMode(interruptPin, INPUT);
   attachInterrupt(digitalPinToInterrupt(interruptPin), blink, FALLING);
   Serial.begin(115200); 
   Wire.begin(); //Start I2C library
@@ -109,8 +109,8 @@ void setup() {
 void loop() {
    if(event){
     Serial.println("Interrupt!"); 
-     Serial.print("Last ALS Value: ");
-     Serial.println(sensor.getLastAmbientLightFromHistory(GAIN_1));
+ //    Serial.print("Last ALS Value: ");
+ //    Serial.println(sensor.getLastAmbientLightFromHistory(GAIN_1));
     Serial.print("Last Distance Value: ");
     Serial.println(sensor.getLastDistanceFromHistory());
     digitalWrite(ledPin, HIGH);

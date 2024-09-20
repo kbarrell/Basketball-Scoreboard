@@ -23,7 +23,7 @@ ezBuzzer buzzer(BUZZER_PIN); // create ezBuzzer object that attaches to a pin;
 
 /* we always wait a bit between updates of the display */
 unsigned long delaytime=250;
-int ledPin = 13;
+int ledPin = LED_BUILTIN;
 
 // notes in the melody:
 int melody[] = {
@@ -63,7 +63,11 @@ void soundIt(int eventType) {
  This method will display the characters for the
  word "Arduino" one after the other on digit 0. 
  */
+
+
 void writeArduinoOn7Segment() {
+  Serial.println("char begun");
+    
   lc.setChar(0,0,'a',false);
   delay(delaytime);
   lc.setRow(0,0,0x05);
@@ -80,14 +84,19 @@ void writeArduinoOn7Segment() {
   delay(delaytime);
   lc.clearDisplay(0);
   delay(delaytime);
+    Serial.println("char end");
+
 } 
+
 
 /*
   This method will scroll all the hexa-decimal
  numbers and letters on the display. You will need at least
  four 7-Segment digits. otherwise it won't really look that good.
  */
+
 void scrollDigits() {
+  Serial.println("scroll begun");
   for(int i=0;i<13;i++) {
     lc.setDigit(0,3,i,false);
     lc.setDigit(0,2,i+1,false);
@@ -100,6 +109,7 @@ void scrollDigits() {
 }
 
 
+
 void setup() {
   /*
    The MAX72XX is in power-saving mode on startup,
@@ -107,24 +117,27 @@ void setup() {
    */
 
   Serial.begin(115200);
-    pinMode (LED_BUILTIN,OUTPUT);
-  
+    pinMode(ledPin,OUTPUT);
+   digitalWrite(ledPin,HIGH);
 
   lc.begin(10,1,10000000);
 	Serial.println("lc begun");
   lc.shutdown(0,false);
-  /* Set the brightness to a medium values */
+/*   Set the brightness to a medium values */
+//  lc.setScanLimit(0,4);
   lc.setIntensity(0,8);
   /* and clear the display */
   lc.clearDisplay(0);
-  digitalWrite(ledPin, HIGH);
-    delay(1000);
-    digitalWrite(ledPin, LOW);
-  
-}
+
+  Serial.println("end setup");
+} 
 
 void loop() { 
-  buzzer.loop();
+  
   writeArduinoOn7Segment();
+  Serial.println("start loop");
+ digitalWrite(ledPin,LOW); 
+ delay(1500);
+
   scrollDigits();
 }

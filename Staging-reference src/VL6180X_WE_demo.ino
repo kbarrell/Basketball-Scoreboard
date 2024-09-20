@@ -107,7 +107,7 @@ void setup() {
 void loop() {
 
   //Get Ambient Light level and report in LUX
-  Serial.print("Ambient Light Level (Lux) = ");
+  //Serial.print("Ambient Light Level (Lux) = ");
   
   //Input GAIN for light levels, 
   // GAIN_20     // Actual ALS Gain of 20
@@ -119,7 +119,7 @@ void loop() {
   // GAIN_1      // Actual ALS Gain of 1.01
   // GAIN_40     // Actual ALS Gain of 40
   
-  Serial.println( sensor.getAmbientLight(GAIN_1) );
+//  Serial.println( sensor.getAmbientLight(GAIN_1) );
 
   //Get Distance and report in mm
   Serial.print("Distance measured (mm) = ");

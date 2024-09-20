@@ -9,7 +9,8 @@
 #include 	<Wire.h>
 #include	"ezBuzzer.h" 		// ezBuzzer library
 #include	"CountDown.h"		//  countdown timer library
-#include 	"VL6180X_WE.h"		//  distance ToF sensor
+//#include 	"VL6180X_WE.h"		//  distance ToF sensor
+#include 	<DFRobot_VL6180X.h>
 #include 	"LedControl_HW_SPI.h"
 #include	"LedControl.h"		//  Digit-segment driver
 
@@ -31,6 +32,7 @@ const int BUZZER_PIN = 5;
 const int trigPin = 3;			//distance sensor pin
 const int driverAddr = 0;		// address of MAX7219 display driver
 const int dispPin = 10;			// pin to select MAX7219 display controller
+const int timeoutLimit = 300000;	// 5 min (in millisecs) timeout to shut down display
 
 VL6180xIdentification identification;
 VL6180x sensor(VL6180X_ADDRESS);
@@ -66,12 +68,12 @@ int noteDurations[] = {
 int lastButtonState = HIGH; 	// the previous state from the input pin
 bool shooting = false;			// is shooting in progress?
 int	 remSecs	=	0;			// time remaining with seconds resolution
-int	preCount = 0;				// register for count during pre-shooting count
+int	 preCount = 0;				// register for count during pre-shooting count
 int	 currentBtnState;			// tracks state of trigger button
-int soundType = 0;
-int	loopcount = 0;
-int scoreCount = 0;							// current score total
-unsigned long buzzerStartTime = 0;
+int  soundType = 0;
+int	 loopcount = 0;
+int  scoreCount = 0;							// current score total
+unsigned long displayTimeout = 0;
 
 
 //	ISR handler for ball detected through hoop
@@ -135,7 +137,7 @@ void setup() {
 
 	soundType = 0;
 	scoreCount = 0;
-	contactBounceTime = millis();
+	displayTimeout = millis();
 	cdt.stop();
 	shooting = false;
 
@@ -177,7 +179,7 @@ void setup() {
 
     lc.begin(dispPin,1,10000000);
 	lc.shutdown(0,false);
-  	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
+//  	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
   	lc.setIntensity(0,8);	// Set the brightness to a medium values 
  
   	lc.clearDisplay(0);		// and clear the display
@@ -199,11 +201,13 @@ void loop() {
 			shooting = false;
 			soundIt(TIMESUP);
 			cdt.stop();
+			displayTimeout = millis();		// record current time to start display timeout
 //			noInterrupts();	
 		} else if (event) {					// hoop detected
 			scoreCount += 1;
 			soundIt(BASKET);
 			delay(500);					// allow time for ball to pass through without retriggering
+//			Serial.println(sensor.getLastDistanceFromHistory());
 			event = false;
 			sensor.VL6180xClearInterrupt();
 		}
@@ -214,8 +218,13 @@ void loop() {
 			remSecs	=	Fullcount;
 			preCount = remSecs;
 			scoreCount = 0;
+			lc.shutdown(0,false);			//  make shure display is awake
+			displayTimeout = millis();		//  renew display timer
 			cdt.start(0,0,0,Fullcount);		//  start countdown clock in secs	
 		} 
+		else if ((millis() - displayTimeout) > timeoutLimit) {
+			lc.shutdown(0, true);					// shutdown display after inactivity period
+		}
 		lastButtonState = currentBtnState;
 		if (cdt.isRunning() ) {						// clock has started
 			remSecs = cdt.remaining();
@@ -235,6 +244,6 @@ void loop() {
 	Serial.print(remSecs);
 	Serial.print("\t");
 	Serial.println(scoreCount);
-//	displayIt(SCOREDISP, scoreCount);
-//	displayIt(CLOCKDISP, remSecs);
+	displayIt(SCOREDISP, scoreCount);
+	displayIt(CLOCKDISP, remSecs);
 }
