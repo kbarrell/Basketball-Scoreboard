@@ -9,8 +9,7 @@
 #include 	<Wire.h>
 #include	"ezBuzzer.h" 		// ezBuzzer library
 #include	"CountDown.h"		//  countdown timer library
-//#include 	"VL6180X_WE.h"		//  distance ToF sensor
-#include 	<DFRobot_VL6180X.h>
+#include 	<DFRobot_VL6180X.h> //  ranging ToF sensor
 #include 	"LedControl_HW_SPI.h"
 #include	"LedControl.h"		//  Digit-segment driver
 
@@ -32,10 +31,9 @@ const int BUZZER_PIN = 5;
 const int trigPin = 3;			//distance sensor pin
 const int driverAddr = 0;		// address of MAX7219 display driver
 const int dispPin = 10;			// pin to select MAX7219 display controller
-const int timeoutLimit = 300000;	// 5 min (in millisecs) timeout to shut down display
+const unsigned long timeoutLimit = 300000;	// 5 min (in millisecs) timeout to shut down display
 
-VL6180xIdentification identification;
-VL6180x sensor(VL6180X_ADDRESS);
+DFRobot_VL6180X VL6180X;
 ezBuzzer buzzer(BUZZER_PIN); // create ezBuzzer object that attaches to a pin;
 CountDown cdt;  			//  default millis
 
@@ -49,9 +47,7 @@ CountDown cdt;  			//  default millis
  */
 LedControl_HW_SPI lc = LedControl_HW_SPI();
 
-unsigned long dispDelay=250;	/* we always wait a bit between updates of the display */
 volatile unsigned int contactBounceTime;		// Supports debouncing of pushbutton time
-
 volatile bool event = false;			// distance sensor triggered  event
 
 // notes in the melody:
@@ -132,69 +128,87 @@ void displayIt(int dispType, int numToDisp) {
 
 void setup() {
 	Serial.begin(115200);
+	Wire.begin(); //Start I2C library
     pinMode (LED_BUILTIN,OUTPUT);
   	pinMode(BUTTON_PIN, INPUT_PULLUP);
-
+	
 	soundType = 0;
 	scoreCount = 0;
 	displayTimeout = millis();
 	cdt.stop();
 	shooting = false;
 
-	pinMode(trigPin, INPUT_PULLUP);
-  	attachInterrupt(digitalPinToInterrupt(trigPin), isr_scoreIt, FALLING);
-  	Wire.begin(); //Start I2C library
+	while(!(VL6180X.begin())){
+    	Serial.println("Please check that the IIC device is properly connected!");
+    	delay(1000);
+  	}  
+ 	 /** Enable the notification function of the INT pin
+ 	  * mode：
+ 	  * VL6180X_DIS_INTERRUPT          Not enable interrupt
+ 	  * VL6180X_LOW_INTERRUPT          Enable interrupt, by default the INT pin outputs low level
+  	 * VL6180X_HIGH_INTERRUPT         Enable interrupt, by default the INT pin outputs high level
+ 	  * Note: When using the VL6180X_LOW_INTERRUPT mode to enable the interrupt, please use "RISING" to trigger it.
+ 	  *       When using the VL6180X_HIGH_INTERRUPT mode to enable the interrupt, please use "FALLING" to trigger it.
+ 	  */
+ 	VL6180X.setInterrupt(/*mode*/VL6180X_HIGH_INTERRUPT); 
 
-	Serial.println("Ready to Sstart");
+  	/** Set the interrupt mode for collecting ambient light
+  	 * mode 
+  	 * interrupt disable  :                       VL6180X_INT_DISABLE             0
+  	 * value < thresh_low :                       VL6180X_LEVEL_LOW               1 
+  	 * value > thresh_high:                       VL6180X_LEVEL_HIGH              2
+  	 * value < thresh_low OR value > thresh_high: VL6180X_OUT_OF_WINDOW           3
+  	 * new sample ready   :                       VL6180X_NEW_SAMPLE_READY        4
+  	 */
+  	VL6180X.rangeConfigInterrupt(VL6180X_OUT_OF_WINDOW);
 
-  	if(sensor.VL6180xInit() != 0){
-   		 Serial.println("FAILED TO INITALIZE"); //Initialize device and check for errors
-    }
+  	/*Set the range measurement period*/
+  	VL6180X.rangeSetInterMeasurementPeriod(/* periodMs 0-25500ms */200);
 
-  	sensor.VL6180xDefaultSettings(); //Load default settings to get started.
-  	delay(100); // delay 0.1s
+  	/*Set threshold value*/
+  	VL6180X.setRangeThresholdValue(/*thresholdL 0-255mm */120,/*thresholdH 0-255mm*/255);
 
-	Serial.println("ToF sensor initialised");
-
-	delay(1000);
-
-  /* Range Threshold Interrupt:
-   * The interrupt is set up with VL6180xSetDistInt(low limit / high limit);
-   * The interrupt is triggered if the measured distance value is OUTSIDE these 
-   * limits. Keep in mind that the VL6180x will return a distance of 255 if 
-   * nothing is in the measuring range.
-   * Examples: 
-   * low limit = 50, high limit = 150 => interrupt is triggered at < 50 and > 150
-   * low limit = 50, high limit = 255 => interrupt is triggered at < 50
-   * low limit = 0, high limit = 50 => interrupts is triggered at > 50
+  	#if defined(ESP32) || defined(ESP8266)||defined(ARDUINO_SAM_ZERO)
+  	attachInterrupt(digitalPinToInterrupt(D9)/*Query the interrupt number of the D9 pin*/,interrupt,FALLING);
+  	#else
+ 	 /*    The Correspondence Table of AVR Series Arduino Interrupt Pins And Terminal Numbers
+  	 * ---------------------------------------------------------------------------------------
+  	 * |                                        |  DigitalPin  | 2  | 3  |                   |
+  	 * |    Uno, Nano, Mini, other 328-based    |--------------------------------------------|
+  	 * |                                        | Interrupt No | 0  | 1  |                   |
+ 	 * |-------------------------------------------------------------------------------------|
+   	* |                                        |    Pin       | 2  | 3  | 21 | 20 | 19 | 18 |
+   	* |               Mega2560                 |--------------------------------------------|
+   	* |                                        | Interrupt No | 0  | 1  | 2  | 3  | 4  | 5  |
+   	* |-------------------------------------------------------------------------------------|
+   	* |                                        |    Pin       | 3  | 2  | 0  | 1  | 7  |    |
+   	* |    Leonardo, other 32u4-based          |--------------------------------------------|
+   	* |                                        | Interrupt No | 0  | 1  | 2  | 3  | 4  |    |
+   	* |--------------------------------------------------------------------------------------
    */
-	sensor.VL6180xSetDistInt(100,255); 
-	sensor.getDistanceContinously();
- 
+  
+  	attachInterrupt(/*Interrupt No*/1,isr_scoreIt,FALLING);	//Enable the external interrupt 1, connect INT1/2 to the digital pin of the main control: 
+    //UNO(2), Mega2560(2), Leonardo(3), microbit(P0).
+  	#endif
+
+  	/*Start continuous range measuring mode */
+  	VL6180X.rangeStartContinuousMode();
+
 	/*
    	The MAX72XX is in power-saving mode on startup,
    	we have to do a wakeup call
    	*/
 
-
     lc.begin(dispPin,1,10000000);
 	lc.shutdown(0,false);
-//  	lc.setScanLimit(0,4);	// Only 4 digits in our scoreboard readout
-  	lc.setIntensity(0,8);	// Set the brightness to a medium values 
- 
+  	lc.setIntensity(0,10);	// Set the brightness to a medium values 
   	lc.clearDisplay(0);		// and clear the display
-
-//  	noInterrupts();
-   Serial.println("wakeup led control");
-	Serial.println("ready to loop");
-	Serial.println("...");
 
 }
 
 void loop() {
 	
 	buzzer.loop(); // MUST call the buzzer.loop() function in loop()
-	
 
 	if (shooting) {							// Push button etc. is diabled while on shot clock
 		if (remSecs == 0) {					// timer has expired
@@ -202,14 +216,12 @@ void loop() {
 			soundIt(TIMESUP);
 			cdt.stop();
 			displayTimeout = millis();		// record current time to start display timeout
-//			noInterrupts();	
 		} else if (event) {					// hoop detected
 			scoreCount += 1;
 			soundIt(BASKET);
-			delay(500);					// allow time for ball to pass through without retriggering
-//			Serial.println(sensor.getLastDistanceFromHistory());
+			delay(200);					// allow time for ball to pass through without retriggering
 			event = false;
-			sensor.VL6180xClearInterrupt();
+			VL6180X.clearRangeInterrupt();
 		}
 		remSecs = cdt.remaining();			
 	} else {								// Push button enabled
@@ -230,8 +242,8 @@ void loop() {
 			remSecs = cdt.remaining();
 			if (remSecs <= ShotClock) {
 				shooting = true;
-				sensor.VL6180xClearInterrupt();
-//				interrupts();
+				event = false;
+				VL6180X.clearRangeInterrupt();
 			}
 			else if (preCount > remSecs){
 				soundIt(LAUNCHCOUNT);				// in pre-count phase
@@ -240,10 +252,6 @@ void loop() {
 		}	
 	}
 
-	
-	Serial.print(remSecs);
-	Serial.print("\t");
-	Serial.println(scoreCount);
 	displayIt(SCOREDISP, scoreCount);
 	displayIt(CLOCKDISP, remSecs);
 }
