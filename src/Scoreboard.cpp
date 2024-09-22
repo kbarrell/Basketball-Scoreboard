@@ -1,9 +1,31 @@
-/*
-	Scoreboard  --  Basketball shot clock and score counter
-
-	Counts successful hoops shot during a controlled countdown period 
-	and displays on large 60mm 7-segment LED array
-
+/**********************************************************************************
+ *
+ *	Scoreboard  --  Basketball shot clock and score counter
+ *
+ *	Counts successful hoops shot during a controlled countdown period 
+ *	and displays on large 60mm 7-segment LED array
+ *
+ *  File:          Scoreboard.cpp
+ * 
+ *  Function:      Basketball Scoreboard main application file.
+ * 
+ *  Copyright:     Copyright (c) 2024 Kevin Barrell
+ 
+ *                 Permission is hereby granted, free of charge, to anyone 
+ *                 obtaining a copy of this document and accompanying files to do, 
+ *                 whatever they want with them without any restriction, including,
+ *                 but not limited to, copying, modification and redistribution.
+ *                 The above copyright notice and this permission notice shall be 
+ *                 included in all copies or substantial portions of the Software.
+ * 
+ *                 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT ANY WARRANTY.
+ * 
+ *  License:       MIT License. See accompanying LICENSE file.
+ * 
+ *  Author:        Kevin Barrell
+ * 
+ *  Description:   Scoreboard and shot clock timer for indoor basketball hoop
+ * ********************************************************************************
 */
 #include 	<Arduino.h>
 #include 	<Wire.h>
