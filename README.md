@@ -16,7 +16,7 @@ but particularly around the challenge of circuit design for driving the higher c
 
 The final segment-driver h/w design adopted a hybrid combination of MAX7219 LED Display Driver to source the segment current, in combination with MAX394 analog switches to control current sinking through MOSFETs.   This design is documented (for 2 digits) in the MAX7219 device datasheet: https://www.analog.com/media/en/technical-documentation/data-sheets/MAX7219-MAX7221.pdf
 
-A VL6180X Time of Flight sensor https://www.st.com/resource/en/datasheet/vl6180x.pdf mounted inside the basketball hoop was used to detect the passage of a ball through the hoop.  THe DRRobot breakout and software library for this sensor https://wiki.dfrobot.com/DFRobot_VL6180X_TOF_Distance_Ranging_Sensor_Breakout_Board_SKU_SEN0427 provided access to an interrupt signal which can be set to recognise distance ranging measurement corresponding to the passage of the ball.
+A VL6180X Time of Flight sensor https://www.st.com/resource/en/datasheet/vl6180x.pdf mounted inside the basketball hoop was used to detect the passage of a ball through the hoop.  The DFRobot breakout and software library for this sensor https://wiki.dfrobot.com/DFRobot_VL6180X_TOF_Distance_Ranging_Sensor_Breakout_Board_SKU_SEN0427 provided access to an interrupt signal which can be set to recognise a distance ranging measurement corresponding to the passage of the ball.
 
 The physical packaging design encompassed:
 - display digits mounted through a thin wooden board that can be attached to the top of the basketball backboard
